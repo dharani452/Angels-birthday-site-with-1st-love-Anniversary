@@ -26,7 +26,7 @@ project/
 ├── videos/
 └── music/
 ```
-
+u need to create 3 folders in the seperately:
 ## 🖼️ Add Your Photos
 
 Place your photos inside the `images` folder.
@@ -39,7 +39,11 @@ images/
 ├── photo2.jpg
 ├── photo3.jpg
 ```
-
+photo folder:
+            *photo1
+            *photo2
+            .......
+            *photo8(all photo u need to keep ur loved once)
 Update the image paths in the HTML/JavaScript files if needed.
 
 ## 🎥 Add Your Videos
@@ -53,6 +57,11 @@ videos/
 ├── video1.mp4
 ├── video2.mp4
 ```
+videos folder:
+            *video1
+            *video2
+            *video3
+            *video4
 
 Update the video paths in `video-letters.html`.
 
@@ -67,6 +76,15 @@ music/
 ├── birthday-song.mp3
 ├── background-music.mp3
 ```
+music folder:
+            *firework1(which will be night shots sound for blast)
+            *romantic-bg(for love letter bg music for 1st page)
+            *romantic-bg1(starting page birthday song)
+            *romantic-bg2(after romantic-bg completed this continuous)
+            *song1
+            *song2
+            ......
+            *song8(this all songs should be in 10sec for the photo frame bg song)
 
 Update the audio source paths in the HTML files.
 
