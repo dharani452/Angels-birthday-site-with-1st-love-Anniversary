@@ -1,0 +1,1280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Everything I Want to Say to You 💌</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=Great+Vibes&family=Cinzel:wght@300;400;600&family=IM+Fell+English:ital@0;1&family=Lato:wght@200;300;400&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════
+   DESIGN TOKENS
+═══════════════════════════════════════════ */
+:root {
+  --rose:     #d4436a;
+  --rose-lt:  #f07090;
+  --gold:     #c8922a;
+  --gold-lt:  #f0c870;
+  --orchid:   #a060a8;
+  --lavender: #8878c0;
+  --peach:    #e8906a;
+  --ink:      #0e0818;
+  --parch:    #fdf6ec;
+  --parch-dk: #f5e8d4;
+  --cream:    #fffaf4;
+  --warm:     #2a1808;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden;font-family:'Lato',sans-serif;background:var(--ink);-webkit-tap-highlight-color:transparent;cursor:default}
+
+/* ═══════════════════════════════════════════
+   CANVAS LAYERS
+═══════════════════════════════════════════ */
+#bg-canvas{position:fixed;inset:0;z-index:0}
+#grain{position:fixed;inset:0;z-index:1;pointer-events:none;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.045'/%3E%3C/svg%3E");
+  opacity:.5;mix-blend-mode:overlay}
+#particle-canvas{position:fixed;inset:0;z-index:2;pointer-events:none}
+
+/* ═══════════════════════════════════════════
+   CURTAIN
+═══════════════════════════════════════════ */
+#curtain{position:fixed;inset:0;z-index:9999;background:#000;pointer-events:none;opacity:1;transition:opacity 0s}
+#curtain.open{opacity:0;transition:opacity 1.6s cubic-bezier(0,0,.2,1)}
+
+/* ═══════════════════════════════════════════
+   PAGE SYSTEM (5 pages, swipe between them)
+═══════════════════════════════════════════ */
+#pages-container{
+  position:fixed;inset:0;z-index:10;
+  display:flex;width:500%; /* 5 pages */
+  transition:transform .0s;
+}
+.page{
+  width:20%; height:100%;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  position:relative;overflow:hidden;
+  flex-shrink:0;
+}
+/* Slide transition via JS */
+#pages-container.sliding{transition:transform .9s cubic-bezier(.77,0,.175,1)}
+
+/* ═══════════════════════════════════════════
+   FLOATING AMBIENCE
+═══════════════════════════════════════════ */
+.fh{position:fixed;bottom:-60px;pointer-events:none;z-index:5;font-size:var(--fs,1.2rem);animation:fh-up var(--d,7s) ease-out var(--dl,0s) forwards}
+@keyframes fh-up{0%{bottom:-60px;opacity:0;transform:translateX(0) scale(.7)}8%{opacity:.7}40%{transform:translateX(var(--s1,22px)) rotate(var(--r1,9deg)) scale(1)}70%{transform:translateX(var(--s2,-18px)) rotate(var(--r2,-7deg)) scale(.94)}100%{bottom:108vh;opacity:0;transform:translateX(var(--s3,10px)) scale(.6)}}
+.pt{position:fixed;top:-20px;pointer-events:none;z-index:4;font-size:var(--fs,.85rem);animation:pt-fall var(--d,5s) ease-in var(--dl,0s) forwards}
+@keyframes pt-fall{0%{top:-20px;opacity:1;transform:rotate(0) translateX(0)}80%{opacity:.7}100%{top:108vh;opacity:0;transform:rotate(var(--sp,360deg)) translateX(var(--dx,50px))}}
+
+/* ═══════════════════════════════════════════
+   NAVIGATION DOTS
+═══════════════════════════════════════════ */
+#nav-dots{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:20;display:flex;gap:10px;pointer-events:none}
+.ndot{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.18);transition:all .45s cubic-bezier(.34,1.56,.64,1)}
+.ndot.active{background:var(--rose-lt);transform:scale(1.55);box-shadow:0 0 10px var(--rose-lt),0 0 20px rgba(212,67,106,.4)}
+.ndot.done{background:rgba(212,168,67,.5)}
+
+/* ═══════════════════════════════════════════
+   NEXT / PREV BUTTONS
+═══════════════════════════════════════════ */
+.page-nav-btn{
+  position:absolute;bottom:15px;z-index:15;
+  display:inline-flex;align-items:center;gap:8px;
+  padding:11px 28px;border:none;border-radius:50px;cursor:pointer;
+  font-family:'Cormorant Garamond',serif;font-style:italic;
+  font-size:clamp(.95rem,2.4vw,1.1rem);
+  color:rgba(255,235,245,.85);
+  background:rgba(255,255,255,.07);
+  backdrop-filter:blur(18px);
+  border:1px solid rgba(255,255,255,.15);
+  transition:transform .28s cubic-bezier(.34,1.56,.64,1),background .25s,border-color .25s,box-shadow .25s;
+  letter-spacing:.5px;
+}
+.page-nav-btn:hover{transform:scale(1.06);background:rgba(212,67,106,.2);border-color:rgba(212,67,106,.5);box-shadow:0 0 22px rgba(212,67,106,.3)}
+.page-nav-btn:active{transform:scale(.97)}
+.page-nav-btn.right{right:clamp(16px,4vw,40px)}
+.page-nav-btn.primary{
+  background:linear-gradient(135deg,rgba(212,67,106,.7),rgba(160,96,168,.7));
+  border-color:rgba(240,112,144,.5);
+  box-shadow:0 0 25px rgba(212,67,106,.35);
+}
+.page-nav-btn.primary:hover{box-shadow:0 0 40px rgba(212,67,106,.6);transform:scale(1.08)}
+
+/* ═══════════════════════════════════════════
+   ── PAGE 1: CINEMATIC OPENER ──
+═══════════════════════════════════════════ */
+#page-opener{
+  background:transparent;padding:20px;
+}
+.opener-bg-text{
+  position:absolute;font-family:'Cinzel',serif;font-weight:300;
+  font-size:clamp(5rem,18vw,14rem);letter-spacing:.3em;
+  color:rgba(255,255,255,.022);pointer-events:none;user-select:none;
+  white-space:nowrap;top:50%;transform:translateY(-50%);
+}
+.opener-card{
+  position:relative;z-index:2;
+  text-align:center;max-width:min(560px,92vw);
+  padding:clamp(38px,6vw,64px) clamp(28px,5vw,52px);
+  border-radius:32px;
+  background:var(--film-bg, rgba(10,6,20,.6));
+  backdrop-filter:blur(30px) saturate(160%);
+  border:1px solid rgba(240,112,144,.22);
+  box-shadow:0 0 100px rgba(212,67,106,.1),0 40px 100px rgba(0,0,0,.55),inset 0 0 80px rgba(212,67,106,.03);
+  overflow:hidden;
+}
+.opener-card::before{
+  content:'';position:absolute;inset:-2px;border-radius:34px;z-index:-1;
+  background:conic-gradient(from var(--oa,0deg),#d4436a,#c8922a,#a060a8,#f07090,#d4436a);
+  opacity:.45;animation:oa-spin 7s linear infinite;
+}
+@property --oa{syntax:'<angle>';initial-value:0deg;inherits:false}
+@keyframes oa-spin{to{--oa:360deg}}
+.opener-card::after{content:'';position:absolute;inset:2px;border-radius:30px;background:linear-gradient(160deg,rgba(10,6,20,.96),rgba(18,8,30,.97));z-index:-1}
+
+/* Decorative corner flourishes */
+.flourish{position:absolute;font-size:1.3rem;color:rgba(200,146,42,.35);text-shadow:0 0 10px rgba(200,146,42,.5);pointer-events:none}
+.flourish-tl{top:18px;left:22px}
+.flourish-tr{top:18px;right:22px}
+.flourish-bl{bottom:18px;left:22px}
+.flourish-br{bottom:18px;right:22px}
+
+.opener-pretitle{font-family:'Cinzel',serif;font-weight:300;font-size:clamp(.58rem,1.5vw,.72rem);color:rgba(240,112,144,.55);letter-spacing:5px;text-transform:uppercase;margin-bottom:14px;display:block}
+.opener-title{font-family:'Great Vibes',cursive;font-size:clamp(2.2rem,6.5vw,4rem);line-height:1.1;background:linear-gradient(135deg,#f07090 0%,#c8922a 45%,#a060a8 80%);background-size:200% auto;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:shine-t 5s linear infinite;margin-bottom:14px;display:block}
+@keyframes shine-t{to{background-position:-200% center}}
+.opener-body{font-family:'Cormorant Garamond',serif;font-style:italic;font-weight:300;font-size:clamp(1rem,2.6vw,1.15rem);color:rgba(255,225,238,.82);line-height:1.82;margin-bottom:22px}
+.opener-body em{color:var(--gold-lt);font-style:normal;text-shadow:0 0 10px rgba(200,146,42,.5)}
+
+.div-row{display:flex;align-items:center;gap:12px;justify-content:center;margin:18px 0}
+.div-line{height:1px;flex:1;background:linear-gradient(90deg,transparent,rgba(200,146,42,.4),transparent)}
+.div-gem{font-size:.85rem;color:var(--gold-lt);text-shadow:0 0 10px rgba(200,146,42,.7);animation:gem-rot 5s linear infinite}
+@keyframes gem-rot{to{transform:rotate(360deg)}}
+
+/* ═══════════════════════════════════════════
+   ── PAGE 2: BIRTHDAY LETTER ──
+═══════════════════════════════════════════ */
+#page-letter{padding:16px 16px 80px}
+
+.letter-paper-wrap{
+  position:relative;
+  max-width:min(640px,95vw);width:100%;
+  max-height:calc(100vh - 120px);
+  display:flex;flex-direction:column;
+}
+
+/* Envelope flap that opens */
+.envelope-flap{
+  width:100%;height:50px;position:relative;flex-shrink:0;
+  margin-bottom:-2px;z-index:2;
+  clip-path:polygon(0 100%, 50% 0, 100% 100%);
+  background:linear-gradient(135deg,var(--parch-dk),var(--parch));
+  transform-origin:bottom center;
+  animation:flap-open 1.2s cubic-bezier(.4,0,.2,1) 0.5s both;
+  filter:drop-shadow(0 -4px 8px rgba(0,0,0,.2));
+}
+@keyframes flap-open{
+  0%  {transform:rotateX(0deg);clip-path:polygon(0 100%, 50% 0, 100% 100%)}
+  100%{transform:rotateX(-180deg) translateY(-100%);opacity:0;pointer-events:none}
+}
+
+/* The actual paper */
+.letter-paper{
+  position:relative;flex:1;
+  background:linear-gradient(175deg,var(--cream) 0%,var(--parch) 60%,var(--parch-dk) 100%);
+  border-radius:4px 4px 10px 10px;
+  box-shadow:
+    0 0 0 1px rgba(200,146,42,.25),
+    0 8px 40px rgba(0,0,0,.5),
+    0 30px 60px rgba(0,0,0,.4),
+    inset 0 0 60px rgba(200,146,42,.04),
+    4px 0 12px rgba(0,0,0,.15);
+  padding:clamp(24px,4vw,40px) clamp(22px,5vw,48px) clamp(20px,3vw,36px);
+  overflow-y:auto;
+  scrollbar-width:thin;
+  scrollbar-color:rgba(200,146,42,.3) transparent;
+}
+.letter-paper::-webkit-scrollbar{width:4px}
+.letter-paper::-webkit-scrollbar-track{background:transparent}
+.letter-paper::-webkit-scrollbar-thumb{background:rgba(200,146,42,.3);border-radius:2px}
+
+/* Paper lines */
+.letter-paper::before{
+  content:'';position:absolute;inset:0;pointer-events:none;border-radius:4px 4px 10px 10px;
+  background:repeating-linear-gradient(transparent,transparent 31px,rgba(200,146,42,.08) 31px,rgba(200,146,42,.08) 32px);
+  background-size:100% 32px;background-position:0 58px;
+}
+/* Left margin line */
+.letter-paper::after{
+  content:'';position:absolute;left:clamp(52px,10vw,72px);top:0;bottom:0;width:1px;
+  background:rgba(212,67,106,.12);pointer-events:none;
+}
+
+/* Letter header */
+.letter-date{
+  font-family:'Cormorant Garamond',serif;font-style:italic;font-weight:300;
+  font-size:clamp(.78rem,2vw,.9rem);
+  color:rgba(100,60,20,.6);text-align:right;margin-bottom:16px;display:block;
+}
+.letter-dear{
+  font-family:'Great Vibes',cursive;
+  font-size:clamp(1.6rem,4.5vw,2.2rem);
+  color:var(--rose);text-shadow:0 0 16px rgba(212,67,106,.25);
+  margin-bottom:14px;display:block;
+  /* Handwritten drop-in animation */
+  opacity:0;transform:translateX(-10px);
+  animation:letter-in 1s cubic-bezier(.2,.8,.3,1) .6s both;
+}
+@keyframes letter-in{to{opacity:1;transform:translateX(0)}}
+
+/* Letter body — typewriter effect applied via JS */
+#letter-body{
+  font-family:'IM Fell English',serif;font-style:italic;
+  font-size:clamp(.92rem,2.3vw,1.05rem);
+  color:rgba(42,24,8,.88);
+  line-height:2.05;
+  white-space:pre-wrap;word-break:break-word;
+  min-height:60px;
+  position:relative;z-index:1;
+}
+/* Typewriter cursor */
+.tw-cursor{
+  display:inline-block;width:2px;height:1.1em;
+  background:var(--rose);margin-left:1px;vertical-align:text-bottom;
+  animation:cursor-blink .95s step-end infinite;
+}
+@keyframes cursor-blink{0%,100%{opacity:1}50%{opacity:0}}
+
+/* Letter footer */
+.letter-footer{
+  margin-top:20px;display:flex;flex-direction:column;align-items:flex-end;gap:6px;
+  opacity:0;transition:opacity 1s ease;
+}
+.letter-footer.show{opacity:1}
+.letter-sign{
+  font-family:'Great Vibes',cursive;font-size:clamp(1.5rem,4vw,2rem);
+  color:var(--rose);text-shadow:0 0 12px rgba(212,67,106,.3);
+}
+.letter-xs{
+  font-family:'Cormorant Garamond',serif;font-style:italic;font-weight:300;
+  font-size:clamp(.82rem,2vw,.95rem);color:rgba(100,60,20,.55);
+}
+/* Wax seal */
+.wax-seal{
+  width:52px;height:52px;border-radius:50%;margin-top:10px;
+  background:radial-gradient(circle at 38% 35%,rgba(255,90,90,.9),#8b0000 60%,#4a0000);
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.4rem;
+  box-shadow:0 4px 16px rgba(0,0,0,.35),inset 0 2px 4px rgba(255,255,255,.15);
+  animation:seal-appear 1s cubic-bezier(.34,1.56,.64,1) both;
+}
+@keyframes seal-appear{from{transform:scale(0) rotate(-30deg);opacity:0}to{transform:scale(1) rotate(0deg);opacity:1}}
+
+/* ═══════════════════════════════════════════
+   ── PAGE 3: LOVE POEM ──
+═══════════════════════════════════════════ */
+#page-poem{padding:16px 16px 80px;overflow:hidden}
+
+.poem-stage{
+  position:relative;max-width:min(600px,94vw);width:100%;
+  display:flex;flex-direction:column;align-items:center;
+  max-height:calc(100vh - 110px);
+}
+/* Soft spotlight behind poem */
+.poem-glow{
+  position:absolute;inset:-60px;border-radius:50%;
+  background:radial-gradient(ellipse at center,rgba(212,67,106,.15) 0%,transparent 65%);
+  filter:blur(30px);animation:p-glow 4s ease-in-out infinite alternate;pointer-events:none;
+}
+@keyframes p-glow{from{transform:scale(1);opacity:.8}to{transform:scale(1.12);opacity:1}}
+
+.poem-scroll-area{width:100%;overflow-y:auto;scrollbar-width:none;padding:0 4px}
+.poem-scroll-area::-webkit-scrollbar{display:none}
+
+.poem-header{text-align:center;margin-bottom:24px;opacity:0;transform:translateY(-20px);transition:opacity .9s ease,transform .9s ease}
+.poem-header.in{opacity:1;transform:translateY(0)}
+.poem-label{font-family:'Cinzel',serif;font-weight:300;font-size:clamp(.56rem,1.5vw,.68rem);color:rgba(240,112,144,.5);letter-spacing:5px;text-transform:uppercase;display:block;margin-bottom:8px}
+.poem-title{font-family:'Great Vibes',cursive;font-size:clamp(2rem,5.5vw,3rem);background:linear-gradient(135deg,#f07090,#c8922a,#a060a8);background-size:200% auto;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:shine-t 5s linear infinite;display:block}
+.poem-subtitle{font-family:'Cormorant Garamond',serif;font-style:italic;font-weight:300;font-size:clamp(.88rem,2.2vw,1rem);color:rgba(255,215,230,.55);letter-spacing:2px;display:block;margin-top:4px}
+
+/* Stanza cards */
+.stanza{
+  width:100%;
+  text-align:center;
+  padding:clamp(18px,3vw,26px) clamp(14px,3vw,24px);
+  margin-bottom:16px;
+  border-radius:18px;
+  background:rgba(18,8,28,.55);
+  backdrop-filter:blur(18px);
+  border:1px solid rgba(240,112,144,.12);
+  box-shadow:0 4px 30px rgba(0,0,0,.3),inset 0 0 30px rgba(212,67,106,.03);
+  opacity:0;transform:translateY(28px);
+  transition:opacity .8s ease,transform .8s ease,border-color .3s;
+}
+.stanza.in{opacity:1;transform:translateY(0)}
+.stanza:hover{border-color:rgba(240,112,144,.28);box-shadow:0 6px 40px rgba(212,67,106,.12),0 4px 30px rgba(0,0,0,.3)}
+.stanza-line{
+  font-family:'Cormorant Garamond',serif;font-style:italic;font-weight:400;
+  font-size:clamp(.95rem,2.5vw,1.12rem);
+  color:rgba(255,228,238,.88);line-height:1.9;display:block;
+}
+.stanza-line.em{color:var(--gold-lt);text-shadow:0 0 10px rgba(200,146,42,.4);font-weight:600;font-size:clamp(1rem,2.7vw,1.18rem)}
+.stanza-line.break{margin:6px 0}
+
+/* ═══════════════════════════════════════════
+   ── PAGE 4: ANNIVERSARY LETTER ──
+═══════════════════════════════════════════ */
+#page-anniversary{padding:16px 16px 80px}
+
+.anniv-wrap{
+  position:relative;max-width:min(640px,95vw);width:100%;
+  max-height:calc(100vh - 120px);
+  display:flex;flex-direction:column;
+}
+/* Aged parchment with emotional feel */
+.anniv-paper{
+  flex:1;overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(200,146,42,.25) transparent;
+  background:linear-gradient(170deg,#fef9f2 0%,#f8edda 50%,#f2e0c2 100%);
+  border-radius:8px;
+  box-shadow:0 0 0 1px rgba(160,100,40,.2),0 8px 40px rgba(0,0,0,.5),0 30px 70px rgba(0,0,0,.4),6px 0 18px rgba(0,0,0,.2);
+  padding:clamp(28px,5vw,48px) clamp(24px,5vw,52px) clamp(24px,4vw,40px);
+}
+.anniv-paper::-webkit-scrollbar{width:3px}
+.anniv-paper::-webkit-scrollbar-thumb{background:rgba(200,146,42,.25);border-radius:2px}
+/* Torn top edge effect */
+.anniv-paper::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:14px;z-index:3;
+  background:linear-gradient(to bottom,rgba(255,255,255,.2),transparent);
+  border-radius:8px 8px 0 0;pointer-events:none;
+}
+/* Margin line */
+.anniv-paper::after{
+  content:'';position:absolute;left:clamp(58px,11vw,80px);top:0;bottom:0;width:1px;
+  background:rgba(212,67,106,.1);pointer-events:none;
+}
+.anniv-date{font-family:'IM Fell English',serif;font-style:italic;font-size:clamp(.78rem,2vw,.9rem);color:rgba(80,40,10,.5);text-align:right;margin-bottom:18px;display:block}
+.anniv-dear{font-family:'Great Vibes',cursive;font-size:clamp(1.5rem,4.2vw,2rem);color:var(--rose);text-shadow:0 0 14px rgba(212,67,106,.25);margin-bottom:16px;display:block;opacity:0;animation:letter-in 1s .4s both}
+
+/* Anniversary letter body — scrollable, no height limit */
+#anniv-body{
+  font-family:'IM Fell English',serif;font-style:italic;
+  font-size:clamp(.9rem,2.2vw,1.02rem);color:rgba(38,18,4,.85);
+  line-height:2.05;white-space:pre-wrap;word-break:break-word;position:relative;z-index:1;
+}
+.anniv-footer{margin-top:22px;display:flex;flex-direction:column;align-items:flex-end;gap:8px;opacity:0;transition:opacity 1.2s ease}
+.anniv-footer.show{opacity:1}
+.anniv-sign{font-family:'Great Vibes',cursive;font-size:clamp(1.4rem,3.8vw,1.85rem);color:var(--rose);text-shadow:0 0 12px rgba(212,67,106,.3)}
+.anniv-xs{font-family:'Cormorant Garamond',serif;font-style:italic;font-weight:300;font-size:clamp(.78rem,1.9vw,.9rem);color:rgba(80,40,10,.5)}
+.anniv-seal{width:48px;height:48px;border-radius:50%;margin-top:10px;background:radial-gradient(circle at 38% 35%,rgba(255,100,100,.9),#8b0000 60%,#4a0000);display:flex;align-items:center;justify-content:center;font-size:1.3rem;box-shadow:0 4px 14px rgba(0,0,0,.3),inset 0 2px 4px rgba(255,255,255,.12);animation:seal-appear 1s both}
+
+/* ═══════════════════════════════════════════
+   ── PAGE 5: FINAL MESSAGE ──
+═══════════════════════════════════════════ */
+#page-final{padding:14px 14px 70px;overflow-y:auto;justify-content:flex-start;padding-top:clamp(20px,4vw,40px)}
+#page-final::-webkit-scrollbar{display:none}
+
+.final-wrap{
+  position:relative;text-align:center;max-width:min(560px,93vw);width:100%;
+  padding:clamp(28px,5vw,52px) clamp(22px,4vw,44px) clamp(24px,4vw,40px);
+  border-radius:36px;
+  background:rgba(10,6,20,.55);
+  backdrop-filter:blur(32px) saturate(160%);
+  border:1px solid rgba(240,112,144,.2);
+  box-shadow:0 0 120px rgba(212,67,106,.14),0 40px 100px rgba(0,0,0,.55),inset 0 0 80px rgba(212,67,106,.03);
+  overflow:hidden;
+  flex-shrink:0;
+  margin-bottom:80px;
+}
+.final-wrap::before{content:'';position:absolute;inset:-2px;border-radius:38px;z-index:-1;background:conic-gradient(from var(--fa,0deg),#d4436a,#c8922a,#a060a8,#f07090,#c8922a,#d4436a);opacity:.5;animation:oa-spin 8s linear infinite}
+.final-wrap::after{content:'';position:absolute;inset:2px;border-radius:34px;background:linear-gradient(160deg,rgba(10,6,20,.97),rgba(18,8,30,.98));z-index:-1}
+
+/* Confetti rain */
+.conf{position:absolute;top:-10px;pointer-events:none;font-size:var(--fs,.9rem);animation:conf-fall var(--d,3s) ease-in var(--dl,0s) forwards}
+@keyframes conf-fall{0%{top:-10px;transform:rotate(0) translateX(0);opacity:1}100%{top:108%;transform:rotate(var(--sp,360deg)) translateX(var(--dx,40px));opacity:0}}
+
+.final-emoji-row{font-size:clamp(1.6rem,5vw,2.5rem);letter-spacing:10px;margin-bottom:18px;display:block;animation:emoji-bounce 2s ease-in-out infinite}
+@keyframes emoji-bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.final-pretitle{font-family:'Cinzel',serif;font-weight:300;font-size:clamp(.58rem,1.5vw,.7rem);color:rgba(240,112,144,.55);letter-spacing:5px;text-transform:uppercase;margin-bottom:10px;display:block}
+.final-title{font-family:'Great Vibes',cursive;font-size:clamp(2rem,5.5vw,3.2rem);background:linear-gradient(135deg,#f07090,#c8922a,#a060a8,#f07090);background-size:300% auto;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:shine-t 4s linear infinite;margin-bottom:8px;display:block}
+.final-sub{font-family:'Cormorant Garamond',serif;font-style:italic;font-weight:300;font-size:clamp(.88rem,2.2vw,1.05rem);color:rgba(255,210,225,.65);letter-spacing:2px;margin-bottom:20px;display:block}
+
+.final-msg-card{
+  background:rgba(255,255,255,.04);border:1px solid rgba(240,112,144,.15);border-radius:18px;
+  padding:clamp(16px,3vw,24px) clamp(14px,3vw,22px);margin-bottom:20px;
+  font-family:'Cormorant Garamond',serif;font-style:italic;font-weight:300;
+  font-size:clamp(.92rem,2.4vw,1.08rem);color:rgba(255,225,238,.85);line-height:1.85;
+}
+.final-msg-card em{color:var(--gold-lt);font-style:normal;text-shadow:0 0 10px rgba(200,146,42,.5)}
+.final-sign-row{font-family:'Great Vibes',cursive;font-size:clamp(1.4rem,3.8vw,2rem);background:linear-gradient(135deg,#f07090,#c8922a);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:20px;display:block;animation:shine-t 4s linear infinite}
+
+.replay-btn{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:11px 28px;border:none;border-radius:50px;cursor:pointer;
+  background:rgba(212,67,106,.18);backdrop-filter:blur(14px);
+  border:1.5px solid rgba(240,112,144,.38);
+  color:rgba(255,230,240,.8);font-family:'Cormorant Garamond',serif;font-style:italic;
+  font-size:clamp(.9rem,2.2vw,1.05rem);letter-spacing:.5px;
+  transition:transform .25s cubic-bezier(.34,1.56,.64,1),box-shadow .25s;
+}
+.replay-btn:hover{transform:scale(1.06);box-shadow:0 0 28px rgba(212,67,106,.4)}
+
+/* ═══════════════════════════════════════════
+   MUSIC BAR (floating bottom-right)
+═══════════════════════════════════════════ */
+#music-bar{
+  position:fixed;bottom:22px;right:18px;z-index:30;
+  display:flex;align-items:center;gap:9px;
+  background:rgba(14,6,24,.78);backdrop-filter:blur(20px);
+  border:1px solid rgba(212,67,106,.3);border-radius:50px;
+  padding:8px 16px;
+  opacity:0;transition:opacity .8s ease;pointer-events:none;
+  box-shadow:0 0 20px rgba(212,67,106,.2);
+}
+#music-bar.vis{opacity:1;pointer-events:all}
+.mbar-ico{font-size:1rem;animation:mico-bob 1.2s ease-in-out infinite alternate}
+@keyframes mico-bob{from{transform:translateY(0)}to{transform:translateY(-3px)}}
+#mbar-lbl{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:.82rem;color:rgba(240,180,210,.7);white-space:nowrap;max-width:120px;overflow:hidden;text-overflow:ellipsis}
+.mbar-wave{display:flex;align-items:flex-end;gap:2px;height:16px}
+.mwb{width:2.5px;border-radius:2px;background:var(--rose-lt);animation:mwba var(--wd,.6s) ease-in-out var(--wdl,0s) infinite alternate}
+@keyframes mwba{from{height:3px;opacity:.5}to{height:var(--wh,12px);opacity:1}}
+#mbar-mute{background:none;border:none;cursor:pointer;font-size:.9rem;color:rgba(255,200,220,.45);transition:color .2s;padding:1px 3px}
+#mbar-mute:hover{color:var(--rose-lt)}
+
+/* ═══════════════════════════════════════════
+   LETTER PAPER DECORATIONS (SVG inlays)
+═══════════════════════════════════════════ */
+.letter-deco-layer{
+  position:absolute;inset:0;pointer-events:none;overflow:hidden;border-radius:4px 4px 10px 10px;z-index:0;
+}
+/* Teddy top-right corner */
+.deco-teddy{
+  position:absolute;top:clamp(14px,3vw,24px);right:clamp(14px,3vw,24px);
+  opacity:.16;
+  animation:deco-sway 5s ease-in-out infinite alternate;
+  transform-origin:bottom center;
+}
+@keyframes deco-sway{from{transform:rotate(-4deg) scale(1)}to{transform:rotate(4deg) scale(1.04)}}
+/* Flowers bottom-left */
+.deco-flowers{
+  position:absolute;bottom:clamp(14px,3vw,24px);left:clamp(14px,3vw,24px);
+  opacity:.14;
+  animation:deco-sway 6s ease-in-out 1s infinite alternate;
+}
+/* Rose top-left */
+.deco-rose-tl{
+  position:absolute;top:clamp(10px,2vw,18px);left:clamp(10px,2vw,18px);
+  opacity:.12;
+  animation:deco-sway 7s ease-in-out 2s infinite alternate;
+}
+/* Small hearts scattered */
+.deco-heart{
+  position:absolute;
+  opacity:.1;
+  font-size:var(--fs,1rem);
+  animation:deco-float var(--d,8s) ease-in-out var(--dl,0s) infinite alternate;
+}
+@keyframes deco-float{from{transform:translate(0,0) rotate(var(--r0,-5deg))}to{transform:translate(var(--tx,5px),var(--ty,-8px)) rotate(var(--r1,5deg))}}
+@media(max-width:480px){
+  .letter-paper{padding:20px 16px 20px 14px}
+  .anniv-paper {padding:20px 14px 20px 14px}
+  .letter-paper::after,.anniv-paper::after{left:50px}
+}
+@media(max-height:640px){
+  .letter-paper-wrap,.anniv-wrap{max-height:calc(100vh - 90px)}
+  .envelope-flap{height:30px}
+}
+</style>
+</head>
+<body>
+
+<!-- LAYERS -->
+<div id="curtain"></div>
+<canvas id="bg-canvas"></canvas>
+<div id="grain"></div>
+<canvas id="particle-canvas"></canvas>
+
+<!-- BACKGROUND MUSIC — replace src with your file -->
+<audio id="bg-music"  preload="auto">
+  <source src="music/romantic-bg.mp3" type="audio/mpeg">
+  <source src="romantic-bg.ogg" type="audio/ogg">
+</audio>
+
+<!-- MUSIC BAR -->
+<div id="music-bar">
+  <span class="mbar-ico">🎵</span>
+  <span id="mbar-lbl">Background Music</span>
+  <div class="mbar-wave">
+    <div class="mwb" style="--wd:.5s;--wdl:0s;--wh:10px"></div>
+    <div class="mwb" style="--wd:.7s;--wdl:.1s;--wh:14px"></div>
+    <div class="mwb" style="--wd:.4s;--wdl:.2s;--wh:8px"></div>
+    <div class="mwb" style="--wd:.6s;--wdl:.05s;--wh:12px"></div>
+    <div class="mwb" style="--wd:.8s;--wdl:.15s;--wh:16px"></div>
+    <div class="mwb" style="--wd:.5s;--wdl:.25s;--wh:10px"></div>
+  </div>
+  <button id="mbar-mute" onclick="toggleBgMusic()">🔊</button>
+</div>
+
+<!-- NAV DOTS -->
+<div id="nav-dots"></div>
+
+<!-- ═══════════════════════════════════
+     5-PAGE CONTAINER
+═══════════════════════════════════ -->
+<div id="pages-container">
+
+<!-- ══ PAGE 1: CINEMATIC OPENER ══ -->
+<div class="page" id="page-opener">
+  <div class="opener-bg-text">LOVE</div>
+  <div class="opener-card">
+    <span class="flourish flourish-tl">✦</span>
+    <span class="flourish flourish-tr">✦</span>
+    <span class="flourish flourish-bl">✦</span>
+    <span class="flourish flourish-br">✦</span>
+
+    <span class="opener-pretitle">A Message From My Heart</span>
+    <span class="opener-title">Before I Say Goodbye to This Screen…</span>
+
+    <p class="opener-body">
+      The videos carried my moments.<br>
+      Now the words will carry my <em>soul.</em>
+    </p>
+    <p class="opener-body">
+      What follows is everything I have held quietly inside me —
+      every birthday wish, every anniversary truth, every
+      <em>"I love you"</em> I was afraid to say out loud.
+    </p>
+    <p class="opener-body">
+      Read slowly.<br>
+      Feel every word.<br>
+      Because <em>every word is entirely, completely you.</em>
+    </p>
+
+    <div class="div-row">
+      <div class="div-line"></div>
+      <span class="div-gem">💌</span>
+      <div class="div-line"></div>
+    </div>
+
+    <button class="page-nav-btn primary right" onclick="startMusic(); goToPage(1)">
+      Begin Reading &nbsp;→
+    </button>
+  </div>
+</div>
+
+<!-- ══ PAGE 2: BIRTHDAY LETTER ══ -->
+<div class="page" id="page-letter">
+  <div class="letter-paper-wrap">
+    <div class="envelope-flap"></div>
+    <div class="letter-paper">
+
+      <!-- ✦ DECORATIVE INLAYS ✦ -->
+      <div class="letter-deco-layer">
+
+        <!-- Teddy bear — top right -->
+        <div class="deco-teddy">
+          <svg width="75" height="80" viewBox="0 0 75 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- ears -->
+            <circle cx="16" cy="16" r="11" fill="#c8922a" opacity=".9"/>
+            <circle cx="59" cy="16" r="11" fill="#c8922a" opacity=".9"/>
+            <circle cx="16" cy="16" r="7" fill="#e8b86d"/>
+            <circle cx="59" cy="16" r="7" fill="#e8b86d"/>
+            <!-- head -->
+            <circle cx="37.5" cy="30" r="22" fill="#c8922a"/>
+            <circle cx="37.5" cy="30" r="22" fill="url(#teddy-head-g)"/>
+            <!-- face muzzle -->
+            <ellipse cx="37.5" cy="38" rx="10" ry="7" fill="#e8b86d"/>
+            <!-- eyes -->
+            <circle cx="29" cy="26" r="3.5" fill="#3a1a08"/>
+            <circle cx="46" cy="26" r="3.5" fill="#3a1a08"/>
+            <circle cx="30" cy="25" r="1.2" fill="white"/>
+            <circle cx="47" cy="25" r="1.2" fill="white"/>
+            <!-- nose -->
+            <ellipse cx="37.5" cy="34" rx="3" ry="2" fill="#8b3a2a"/>
+            <!-- mouth -->
+            <path d="M33 37 Q37.5 41 42 37" stroke="#8b3a2a" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+            <!-- body -->
+            <ellipse cx="37.5" cy="63" rx="20" ry="18" fill="#c8922a"/>
+            <!-- belly -->
+            <ellipse cx="37.5" cy="63" rx="13" ry="12" fill="#e8b86d"/>
+            <!-- arms -->
+            <ellipse cx="13" cy="58" rx="9" ry="7" fill="#c8922a" transform="rotate(-20 13 58)"/>
+            <ellipse cx="62" cy="58" rx="9" ry="7" fill="#c8922a" transform="rotate(20 62 58)"/>
+            <!-- legs -->
+            <ellipse cx="26" cy="78" rx="8" ry="6" fill="#c8922a"/>
+            <ellipse cx="49" cy="78" rx="8" ry="6" fill="#c8922a"/>
+            <!-- small heart on belly -->
+            <path d="M34 60 Q34 57 37.5 60 Q41 57 41 60 Q41 64 37.5 67 Q34 64 34 60Z" fill="#d4436a" opacity=".7"/>
+            <defs>
+              <radialGradient id="teddy-head-g" cx="40%" cy="35%">
+                <stop offset="0%" stop-color="#e8b86d" stop-opacity=".3"/>
+                <stop offset="100%" stop-color="#c8922a" stop-opacity="0"/>
+              </radialGradient>
+            </defs>
+          </svg>
+        </div>
+
+        <!-- Flowers bouquet — bottom left -->
+        <div class="deco-flowers">
+          <svg width="70" height="80" viewBox="0 0 70 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- stems -->
+            <path d="M35 75 Q30 60 25 50" stroke="#5a8a4a" stroke-width="2" stroke-linecap="round"/>
+            <path d="M35 75 Q35 58 35 48" stroke="#5a8a4a" stroke-width="2" stroke-linecap="round"/>
+            <path d="M35 75 Q40 62 45 50" stroke="#5a8a4a" stroke-width="2" stroke-linecap="round"/>
+            <path d="M35 75 Q28 65 22 55" stroke="#5a8a4a" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M35 75 Q44 68 50 56" stroke="#5a8a4a" stroke-width="1.5" stroke-linecap="round"/>
+            <!-- leaves -->
+            <path d="M30 63 Q20 58 22 50 Q28 55 30 63Z" fill="#6aaa5a"/>
+            <path d="M40 63 Q50 58 48 50 Q42 55 40 63Z" fill="#6aaa5a"/>
+            <!-- rose 1 (centre) -->
+            <circle cx="35" cy="45" r="9" fill="#d4436a"/>
+            <path d="M29 45 Q35 38 41 45 Q35 52 29 45Z" fill="#e8607a" opacity=".7"/>
+            <path d="M35 39 Q40 44 35 49 Q30 44 35 39Z" fill="#f07090" opacity=".6"/>
+            <circle cx="35" cy="45" r="4" fill="#b02850"/>
+            <!-- petals rose 1 -->
+            <ellipse cx="26" cy="41" rx="5" ry="3" fill="#d4436a" opacity=".6" transform="rotate(-30 26 41)"/>
+            <ellipse cx="44" cy="41" rx="5" ry="3" fill="#d4436a" opacity=".6" transform="rotate(30 44 41)"/>
+            <ellipse cx="35" cy="36" rx="5" ry="3" fill="#d4436a" opacity=".55"/>
+            <!-- daisy left -->
+            <circle cx="22" cy="48" r="5" fill="#f5c842"/>
+            <ellipse cx="15" cy="48" rx="4" ry="2.5" fill="#fff" opacity=".85"/>
+            <ellipse cx="29" cy="48" rx="4" ry="2.5" fill="#fff" opacity=".85"/>
+            <ellipse cx="22" cy="41" rx="2.5" ry="4" fill="#fff" opacity=".85"/>
+            <ellipse cx="22" cy="55" rx="2.5" ry="4" fill="#fff" opacity=".85"/>
+            <!-- daisy right -->
+            <circle cx="48" cy="48" r="5" fill="#f5c842"/>
+            <ellipse cx="41" cy="48" rx="4" ry="2.5" fill="#ffd0e8" opacity=".85"/>
+            <ellipse cx="55" cy="48" rx="4" ry="2.5" fill="#ffd0e8" opacity=".85"/>
+            <ellipse cx="48" cy="41" rx="2.5" ry="4" fill="#ffd0e8" opacity=".85"/>
+            <ellipse cx="48" cy="55" rx="2.5" ry="4" fill="#ffd0e8" opacity=".85"/>
+            <!-- small tulip left -->
+            <path d="M22 54 Q18 46 22 42 Q26 46 22 54Z" fill="#e84a6a" opacity=".75"/>
+            <!-- small bud right -->
+            <path d="M48 54 Q44 46 48 42 Q52 46 48 54Z" fill="#c060a0" opacity=".7"/>
+            <!-- ribbon bow at base -->
+            <path d="M28 74 Q35 70 42 74" stroke="#d4436a" stroke-width="2" fill="none" stroke-linecap="round"/>
+            <circle cx="35" cy="74" r="2.5" fill="#d4436a"/>
+          </svg>
+        </div>
+
+        <!-- Small rose top-left corner -->
+        <div class="deco-rose-tl">
+          <svg width="38" height="38" viewBox="0 0 38 38" fill="none">
+            <circle cx="19" cy="19" r="11" fill="#d4436a"/>
+            <path d="M11 19 Q19 10 27 19 Q19 28 11 19Z" fill="#e8607a" opacity=".65"/>
+            <path d="M19 11 Q26 18 19 25 Q12 18 19 11Z" fill="#f07090" opacity=".55"/>
+            <circle cx="19" cy="19" r="5" fill="#a02040"/>
+            <ellipse cx="8" cy="15" rx="5" ry="3" fill="#d4436a" opacity=".5" transform="rotate(-35 8 15)"/>
+            <ellipse cx="30" cy="15" rx="5" ry="3" fill="#d4436a" opacity=".5" transform="rotate(35 30 15)"/>
+            <ellipse cx="19" cy="8" rx="3" ry="5" fill="#d4436a" opacity=".45"/>
+            <!-- leaf -->
+            <path d="M10 26 Q5 20 10 16 Q12 22 10 26Z" fill="#5a8a4a" opacity=".6"/>
+          </svg>
+        </div>
+
+        <!-- Scattered tiny hearts -->
+        <div class="deco-heart" style="--fs:.9rem;top:42%;right:8%;--d:7s;--dl:0s;--r0:-8deg;--r1:6deg;--tx:4px;--ty:-6px">❤️</div>
+        <div class="deco-heart" style="--fs:.75rem;top:55%;left:6%;--d:9s;--dl:1.5s;--r0:5deg;--r1:-7deg;--tx:-3px;--ty:-8px">💕</div>
+        <div class="deco-heart" style="--fs:.7rem;top:25%;right:15%;--d:8s;--dl:3s;--r0:-3deg;--r1:5deg;--tx:5px;--ty:-5px">🌸</div>
+        <div class="deco-heart" style="--fs:.65rem;bottom:22%;right:5%;--d:6s;--dl:2s;--r0:6deg;--r1:-4deg;--tx:-4px;--ty:-7px">✨</div>
+        <div class="deco-heart" style="--fs:.7rem;top:70%;left:14%;--d:10s;--dl:.8s;--r0:-5deg;--r1:8deg;--tx:6px;--ty:-6px">💖</div>
+
+      </div>
+      <!-- END DECO LAYER -->
+      <span class="letter-date" id="letter-date"></span>
+      <span class="letter-dear">My Dearest Love,</span>
+      <div id="letter-body"></div>
+      <div class="letter-footer" id="letter-footer">
+        <div class="wax-seal" id="wax-seal" style="animation-delay:0s">💋</div>
+        <span class="letter-sign">Yours, now & always</span>
+        <span class="letter-xs">with every breath I breathe ❤️</span>
+      </div>
+    </div>
+  </div>
+  <button class="page-nav-btn primary right" id="letter-next-btn" onclick="goToPage(2)" style="opacity:0;pointer-events:none;transition:opacity .8s ease">
+    Read the Poem &nbsp;→
+  </button>
+</div>
+
+<!-- ══ PAGE 3: LOVE POEM ══ -->
+<div class="page" id="page-poem">
+  <div class="poem-stage">
+    <div class="poem-glow"></div>
+    <div class="poem-scroll-area">
+      <div class="poem-header" id="poem-header">
+        <span class="poem-label">A Poem Written in Feeling</span>
+        <span class="poem-title">One Year of You</span>
+        <span class="poem-subtitle">a love anniversary in verse</span>
+      </div>
+      <div id="poem-stanzas"></div>
+    </div>
+  </div>
+  <button class="page-nav-btn primary right" id="poem-next-btn" onclick="goToPage(3)" style="opacity:0;pointer-events:none;transition:opacity .8s ease">
+    The Anniversary Letter &nbsp;→
+  </button>
+</div>
+
+<!-- ══ PAGE 4: ANNIVERSARY LETTER ══ -->
+<div class="page" id="page-anniversary">
+  <div class="anniv-wrap">
+    <div class="anniv-paper">
+      <span class="anniv-date" id="anniv-date"></span>
+      <span class="anniv-dear">My Love — One Year Later,</span>
+      <div id="anniv-body"></div>
+      <div class="anniv-footer" id="anniv-footer">
+        <div class="anniv-seal">💗</div>
+        <span class="anniv-sign">Yours through every season</span>
+        <span class="anniv-xs">till the last breath of my life — and beyond ❤️</span>
+      </div>
+    </div>
+  </div>
+  <button class="page-nav-btn primary right" id="anniv-next-btn" onclick="goToPage(4)" style="opacity:0;pointer-events:none;transition:opacity .8s ease">
+    One Last Thing &nbsp;→
+  </button>
+</div>
+
+<!-- ══ PAGE 5: FINAL MESSAGE ══ -->
+<div class="page" id="page-final">
+  <div class="final-wrap" id="final-wrap">
+    <span class="final-emoji-row">🎂 💖 🎊 💍 ✨</span>
+    <span class="final-pretitle">Birthday &amp; One Year Anniversary</span>
+    <span class="final-title">Happy Birthday, My Love</span>
+    <span class="final-sub">And Happy One Year of Us ❤️</span>
+
+    <div class="final-msg-card">
+      Today you turn another year more beautiful, more wonderful,
+      more <em>you</em> — and I am the luckiest person alive to have
+      spent the last year loving you.<br><br>
+      One year of your laugh. One year of your warmth.
+      One year of falling deeper every single day.<br><br>
+      This birthday and this anniversary are two celebrations
+      of the same miracle — <em>you chose me, and I choose you,
+      every morning, every night, every breath in between.</em><br><br>
+      Here's to every year after this one. ✨
+    </div>
+
+    <span class="final-sign-row">— Always &amp; forever yours 💝</span>
+
+    <button class="final-btn" onclick="window.location.href='birthday-surprise.html'">
+  ↺ Start from Beginning
+</button>
+  </div>
+</div>
+
+</div><!-- end pages-container -->
+
+<!-- ═══════════════════════════════════
+     JAVASCRIPT
+═══════════════════════════════════ -->
+<script>
+
+'use strict';
+const bgMusic = document.getElementById("bg-music");
+
+/* 🔥 ADD HERE */
+const SONGS = [
+  "music/romantic-bg.mp3",
+  "music/romantic-bg2.mp3",
+  
+];
+
+let currentSongIndex = 0;
+function startMusic() {
+  bgMusic.src = SONGS[currentSongIndex];
+  bgMusic.volume = 0.7;
+  bgMusic.play().catch(err => {
+    console.log("Play blocked:", err);
+  });
+}
+
+function toggleBgMusic() {
+  if (bgMusic.paused) {
+    bgMusic.play();
+  } else {
+    bgMusic.pause();
+  }
+}
+bgMusic.addEventListener("ended", () => {
+  currentSongIndex++;
+
+  if (currentSongIndex >= SONGS.length) {
+    currentSongIndex = 0;
+  }
+
+  bgMusic.src = SONGS[currentSongIndex];
+  bgMusic.play();
+});
+
+/* ─── BIRTHDAY LETTER CONTENT ─── */
+const BIRTHDAY_LETTER = `Today is your day — and I want you to feel that in every single cell of your body.
+
+Not just "Happy Birthday" the way people text it without thinking. I mean this with everything I have: today, the world got a little brighter the moment you were born in it. And I get to be the person who is lucky enough to know that firsthand.
+
+I think about you more than you will ever realise. In quiet moments, in crowded rooms, in the space between one breath and the next — you are there. You have become the background music of everything I do.
+
+You are kinder than you know. Stronger than you believe. More beautiful than you give yourself credit for on the days when the mirror lies to you. I see you, all of you, the version you hide and the version you share — and I love every single one.
+
+On this birthday, I want you to have everything your heart quietly wishes for. I want you to know that being loved by you is the greatest thing that has ever happened to me.
+
+So blow out the candles, my love. Make your wish. And know that whatever you wished for — I am already wishing it for you too, with everything I am.
+
+Happy Birthday. 🎂`;
+
+/* ─── POEM STANZAS ─── */
+const POEM_STANZAS = [
+  {
+    lines: [
+      "I did not know what love was",
+      "until the day I knew you —",
+      "not the love from songs and stories,",
+      "but the kind that quietly, steadily, grew.",
+    ],
+  },
+  {
+    lines: [
+      "I can love you for 4 Days",
+      "Spring ,Summer ,Autumn and Winter",
+      "Oh no maybe 3 days,",
+      "Yesterday ,Today and Tomorrow",
+    ],
+    highlight: true,
+  },
+  {
+    lines: [
+      "How about 2 days?",
+      "Day and night,",
+      "Oh no may be 1 day?",
+      "Everyday.",
+    ],
+    highlight: true,
+  },
+  {
+    lines: [
+      "How Can You \"SM LE\" Without \"I\"?",
+      "How Can You Be \"F_ NE\" Without \"I\"?",
+      "How Can You \"W SH\" Without \"I\"?",
+      "How Can You Be \"N CE\" Without \"I\"?",
+    ],
+  },
+  {
+    lines: [
+      "How Can You Be a \"FR_END\" Without \"I\"? So \"I\" Am Very Important!",
+      "But How Can I Achieve \"S CCESS\" Without \"U\"?",
+      "How Can I \"LA GH\" Without \"U\"?",
+      "How Can I Take A \"C P\" of Tea Without \"U\"?",
+    ],
+    highlight: true,
+  },
+  {
+    lines: [
+     "How Can I Enjoy The \"S NSHINE \" Without \"U\"?",
+     "How Can I Have \"F N\" Without \"U\"?",
+     "How can \"I Love  \" Without \"U\"?",
+     "And That Makes \"U\" More Important Than \"I\"...",
+     "Therefore Priya (U & I) = WE ❤️",
+     "We need one another in life to be happy 💖",
+    ],
+  },
+  {
+    lines: [
+      "One year.",
+      "Three hundred and sixty-five days",
+      "of choosing you — and you choosing me.",
+      "And I would choose you all over again",
+      "in every life I am given to live.",
+    ],
+    highlight: true,
+  },
+  {
+    lines: [
+      "So here is my anniversary promise —",
+      "not carved in stone, not sworn on stars,",
+      "just written in the ordinary, extraordinary",
+      "truth of who we are:",
+    ],
+  },
+  {
+    lines: [
+      "I will love you through the seasons.",
+      "Through the storms. Through the still.",
+      "Through every year that follows this one —",
+      "and I will love you still.",
+    ],
+    highlight: true,
+    isLast: true,
+  },
+];
+
+/* ─── ANNIVERSARY LETTER CONTENT ─── */
+const ANNIV_LETTER = `One year.
+
+I keep saying those two words like they could possibly hold the weight of everything they mean. One year of loving you. One year of being loved by you. One year of learning what it actually feels like to have someone in your life who changes everything about the way you see the world.
+
+I want to be honest with you — the way I am only ever honest with you.
+
+This year was not always easy. There were days when the distance between us felt louder than any argument. Days when I did not have the right words, and you needed words so badly. Days when I was scared, not of you, but of how much I needed you — and how terrifying it is to need someone that much.
+
+There were days I watched you carry sadness that had nothing to do with us, and I did not know how to help except to stay. To just stay. And I hope that was enough. I hope you always felt that I was there — even in the quiet, even in the spaces between conversations, even when you could not feel anything at all.
+
+But then there were the other days.
+
+The days your laugh caught me completely off guard and I forgot what I was thinking. The days you said something so honest it stopped me mid-breath. The days we found each other funny in the stupidest ways. The days we sat in comfortable silence and I thought: this is it. This is what people mean when they say they have found their person.
+
+You are my person.
+
+You have made me care about things I never cared about before. You have made me gentler. More patient. More willing to be wrong. You have shown me, without trying, that love is not a dramatic declaration — it is a thousand small, quiet choices made every day. And every day, I choose you.
+
+I will not promise you that the years ahead will be without storms. I will not promise you that I will always say the right thing or that I will never disappoint you. I am human, and I am imperfect, and I am still learning.
+
+But I will promise you this —
+
+I will never stop choosing you.
+Not tomorrow. Not in ten years. Not when things are hard. Not when life feels like too much. Not in any version of this life I could possibly live.
+
+You asked me once if I was sure. I have never been more sure of anything.
+
+This is one year. And I will love you through every year that follows. Through the beautiful ones and the difficult ones. Through the ones that surprise us and the ones that test us. Through the ordinary Tuesdays and the extraordinary moments and everything in between.
+
+Till the last breath of my life — and if there is anything after that, through that too.
+
+Happy One Year, my love. 
+
+You are every reason.`;
+
+/* ═══════════════════════════════════
+   BACKGROUND CANVAS
+═══════════════════════════════════ */
+const bgC=document.getElementById('bg-canvas'),bgX=bgC.getContext('2d');
+let W,H,T=0;
+function rBg(){W=bgC.width=window.innerWidth;H=bgC.height=window.innerHeight}
+window.addEventListener('resize',rBg);rBg();
+const AUR=[
+  {cx:.18,cy:.72,rx:.58,ry:.42,col:[212,67,106],spd:.7},
+  {cx:.82,cy:.28,rx:.52,ry:.38,col:[160,96,168],spd:.5},
+  {cx:.5, cy:.5, rx:.62,ry:.48,col:[200,146,42],spd:.85},
+  {cx:.15,cy:.22,rx:.44,ry:.3, col:[136,120,192],spd:.6},
+  {cx:.85,cy:.78,rx:.48,ry:.33,col:[232,144,106],spd:.78},
+  {cx:.5, cy:.02,rx:.75,ry:.22,col:[240,120,160],spd:.45},
+];
+const STARS=Array.from({length:180},()=>({x:Math.random(),y:Math.random(),r:.2+Math.random()*1.6,a:.05+Math.random()*.55,s:1+Math.random()*4,p:Math.random()*Math.PI*2}));
+function drawBg(){
+  T+=.002;bgX.clearRect(0,0,W,H);
+  const g=bgX.createLinearGradient(0,0,W,H);
+  g.addColorStop(0,'#160820');g.addColorStop(.35,'#1e0826');g.addColorStop(.7,'#1c0a24');g.addColorStop(1,'#10061a');
+  bgX.fillStyle=g;bgX.fillRect(0,0,W,H);
+  AUR.forEach(a=>{
+    const x=(a.cx+Math.sin(T*a.spd)*.07)*W,y=(a.cy+Math.cos(T*a.spd*1.3)*.05)*H;
+    const rg=bgX.createRadialGradient(x,y,0,x,y,a.rx*W);
+    rg.addColorStop(0,`rgba(${a.col[0]},${a.col[1]},${a.col[2]},.17)`);
+    rg.addColorStop(.5,`rgba(${a.col[0]},${a.col[1]},${a.col[2]},.06)`);
+    rg.addColorStop(1,`rgba(${a.col[0]},${a.col[1]},${a.col[2]},0)`);
+    bgX.fillStyle=rg;bgX.fillRect(0,0,W,H);
+  });
+  STARS.forEach(s=>{
+    const al=s.a*(.4+.6*Math.sin(T*s.s+s.p));
+    bgX.save();bgX.globalAlpha=al;bgX.shadowBlur=5;bgX.shadowColor='#ffd0e8';
+    bgX.beginPath();bgX.arc(s.x*W,s.y*H,s.r,0,Math.PI*2);bgX.fillStyle='#fff';bgX.fill();bgX.restore();
+  });
+  requestAnimationFrame(drawBg);
+}
+drawBg();
+
+/* ═══════════════════════════════════
+   PARTICLE CANVAS
+═══════════════════════════════════ */
+const pC=document.getElementById('particle-canvas'),pX=pC.getContext('2d');
+let pW,pH;
+function rP(){pW=pC.width=window.innerWidth;pH=pC.height=window.innerHeight}
+window.addEventListener('resize',rP);rP();
+let parts=[];
+function h2r(hex,a){let h=hex.replace('#','');if(h.length===3)h=h[0]+h[0]+h[1]+h[1]+h[2]+h[2];return `rgba(${parseInt(h.slice(0,2),16)},${parseInt(h.slice(2,4),16)},${parseInt(h.slice(4,6),16)},${a})`}
+const SC=['#d4436a','#f07090','#c8922a','#f0c870','#a060a8','#c084fc','#e8906a','#fff'];
+class Spark{
+  constructor(x,y,col){
+    this.x=x;this.y=y;this.col=col;const a=Math.random()*Math.PI*2,s=1+Math.random()*3.5;
+    this.vx=Math.cos(a)*s;this.vy=Math.sin(a)*s-.8;this.life=1;this.dec=.015+Math.random()*.02;
+    this.sz=1.2+Math.random()*2;this.g=.04;this.tr=[];
+  }
+  upd(){this.tr.push({x:this.x,y:this.y});if(this.tr.length>6)this.tr.shift();this.x+=this.vx;this.y+=this.vy;this.vy+=this.g;this.vx*=.978;this.vy*=.978;this.life-=this.dec}
+  drw(){
+    const a=Math.max(0,this.life),r=this.sz*a;if(r<.1)return;
+    pX.save();pX.globalAlpha=a;
+    const gr=pX.createRadialGradient(this.x,this.y,0,this.x,this.y,r*2.5);
+    gr.addColorStop(0,h2r(this.col,1));gr.addColorStop(.5,h2r(this.col,.5));gr.addColorStop(1,h2r(this.col,0));
+    pX.beginPath();pX.arc(this.x,this.y,r*2.5,0,Math.PI*2);pX.fillStyle=gr;pX.fill();
+    pX.beginPath();pX.arc(this.x,this.y,r*.4,0,Math.PI*2);pX.fillStyle='#fff';pX.fill();
+    pX.restore();
+  }
+}
+function burst(x,y,n=30){for(let i=0;i<n;i++)parts.push(new Spark(x,y,SC[~~(Math.random()*SC.length)]))}
+function pLoop(){pX.clearRect(0,0,pW,pH);parts=parts.filter(p=>p.life>0);parts.forEach(p=>{p.upd();p.drw()});requestAnimationFrame(pLoop)}
+pLoop();
+
+/* ═══════════════════════════════════
+   FLOATERS
+═══════════════════════════════════ */
+const HE=['❤️','💖','💗','💝','💕','🩷','💞','🌸','✨','🌹','🦋','💐'];
+function spawnH(n=5){
+  for(let i=0;i<n;i++){
+    const el=document.createElement('div');el.className='fh';el.textContent=HE[~~(Math.random()*HE.length)];
+    const s1=(Math.random()-.5)*60,s2=(Math.random()-.5)*50,s3=(Math.random()-.5)*40;
+    el.style.cssText=`left:${Math.random()*90}vw;font-size:${.8+Math.random()*1}rem;--d:${5+Math.random()*4}s;--dl:${Math.random()*2}s;--s1:${s1}px;--r1:${(Math.random()-.5)*16}deg;--s2:${s2}px;--r2:${(Math.random()-.5)*12}deg;--s3:${s3}px;`;
+    document.body.appendChild(el);setTimeout(()=>el.remove(),10000);
+  }
+}
+const PE=['🌸','🌺','🌷','✿','❀','🌼'];
+function spawnP(n=7){
+  for(let i=0;i<n;i++){
+    const el=document.createElement('div');el.className='pt';el.textContent=PE[~~(Math.random()*PE.length)];
+    el.style.cssText=`left:${Math.random()*98}vw;font-size:${.65+Math.random()*.85}rem;--d:${3.5+Math.random()*3}s;--dl:${Math.random()*2}s;--sp:${(Math.random()-.5)*580}deg;--dx:${(Math.random()-.5)*120}px;`;
+    document.body.appendChild(el);setTimeout(()=>el.remove(),7000);
+  }
+}
+
+/* ═══════════════════════════════════
+   PAGE NAVIGATION
+═══════════════════════════════════ */
+let currentPage = 0;
+const TOTAL = 5;
+let pageInited = [false,false,false,false,false];
+
+function buildNavDots(){
+  const c=document.getElementById('nav-dots');c.innerHTML='';
+  for(let i=0;i<TOTAL;i++){const d=document.createElement('div');d.className='ndot'+(i===0?' active':'');c.appendChild(d)}
+}
+function updateNavDots(idx){
+  document.querySelectorAll('.ndot').forEach((d,i)=>{d.classList.toggle('active',i===idx);d.classList.toggle('done',i<idx)})
+}
+
+function goToPage(idx,skipAnim=false){
+  if(idx<0||idx>=TOTAL)return;
+  const container=document.getElementById('pages-container');
+  if(!skipAnim){
+    // Flash effect
+    const flash=document.createElement('div');
+    flash.style.cssText='position:fixed;inset:0;background:rgba(212,67,106,.12);z-index:300;pointer-events:none;opacity:1;transition:opacity .6s ease';
+    document.body.appendChild(flash);
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{flash.style.opacity='0';setTimeout(()=>flash.remove(),700)}));
+    container.classList.add('sliding');
+  }
+  container.style.transform=`translateX(-${idx*20}%)`;
+  currentPage=idx;
+  updateNavDots(idx);
+  if(!skipAnim)setTimeout(()=>container.classList.remove('sliding'),950);
+  // Init page content
+  setTimeout(()=>initPage(idx),skipAnim?0:450);
+  // Burst on transition
+  if(!skipAnim){
+    setTimeout(()=>{burst(window.innerWidth/2,window.innerHeight/2,25);spawnH(5);spawnP(5)},300);
+  }
+}
+
+function initPage(idx){
+  if(pageInited[idx]) return;
+  pageInited[idx]=true;
+  if(idx===1) initLetter();
+  else if(idx===2) initPoem();
+  else if(idx===3) initAnniv();
+  else if(idx===4) initFinal();
+}
+
+/* ═══════════════════════════════════
+   PAGE 2: BIRTHDAY LETTER — TYPEWRITER
+═══════════════════════════════════ */
+const LETTER_SPEED = 42; // ms per character — slower, more natural
+
+function setLetterDate(){
+  // Fixed date: April 11, 2026
+  const el=document.getElementById('letter-date');
+  if(el) el.textContent='Saturday, April 11, 2026';
+}
+
+function initLetter(){
+  setLetterDate();
+  const body=document.getElementById('letter-body');
+  body.innerHTML='';
+  const cursor=document.createElement('span');cursor.className='tw-cursor';cursor.textContent='|';
+  body.appendChild(cursor);
+
+  let i=0;
+  const text=BIRTHDAY_LETTER;
+  function typeChar(){
+    if(i>=text.length){
+      // Done — show footer, reveal next button
+      cursor.remove();
+      document.getElementById('letter-footer').classList.add('show');
+      const btn=document.getElementById('letter-next-btn');
+      if(btn){btn.style.opacity='1';btn.style.pointerEvents='all';}
+      spawnH(8);spawnP(6);
+      return;
+    }
+    const ch=text[i++];
+    if(ch==='\n'){
+      // New paragraph
+      body.insertBefore(document.createElement('br'),cursor);
+      if(text[i]==='\n'){body.insertBefore(document.createElement('br'),cursor);i++;}
+    } else {
+      body.insertBefore(document.createTextNode(ch),cursor);
+    }
+    body.parentElement.scrollTop=body.parentElement.scrollHeight;
+    // Vary speed: slower on punctuation for drama
+    const delay=ch==='.'||ch==='!'||ch==='?'?200:ch===','||ch===';'?100:ch===' '?38:LETTER_SPEED;
+    setTimeout(typeChar,delay);
+  }
+  setTimeout(typeChar, 900);
+}
+
+/* ═══════════════════════════════════
+   PAGE 3: POEM — STAGGER REVEAL
+═══════════════════════════════════ */
+function initPoem(){
+  // Build stanzas
+  const cont=document.getElementById('poem-stanzas');
+  cont.innerHTML='';
+  POEM_STANZAS.forEach((st,si)=>{
+    const card=document.createElement('div');
+    card.className='stanza';
+    st.lines.forEach((ln,li)=>{
+      const s=document.createElement('span');
+      s.className='stanza-line'+(st.highlight&&li===st.lines.length-1?' em':'')+(li===0&&si>0?' break':'');
+      s.textContent=ln;card.appendChild(s);
+    });
+    if(st.isLast){
+      const br=document.createElement('span');br.className='stanza-line break';br.textContent='— ✦ —';card.appendChild(br);
+    }
+    cont.appendChild(card);
+  });
+
+  // Stagger reveal
+  setTimeout(()=>document.getElementById('poem-header').classList.add('in'),300);
+  document.querySelectorAll('.stanza').forEach((st,i)=>{
+    setTimeout(()=>{
+      st.classList.add('in');
+      if(i===POEM_STANZAS.length-1){
+        // All done — show next button
+        setTimeout(()=>{
+          const btn=document.getElementById('poem-next-btn');
+          if(btn){btn.style.opacity='1';btn.style.pointerEvents='all';}
+          spawnH(6);spawnP(5);
+        },800);
+      }
+    },500+i*480);
+  });
+}
+
+/* ═══════════════════════════════════
+   PAGE 4: ANNIVERSARY LETTER — TYPEWRITER
+═══════════════════════════════════ */
+function initAnniv(){
+  // Fixed date: April 11, 2026
+  const el=document.getElementById('anniv-date');
+  if(el) el.textContent='Saturday, April 11, 2026 — One Year Together';
+
+  const body=document.getElementById('anniv-body');
+  body.innerHTML='';
+  const cursor=document.createElement('span');cursor.className='tw-cursor';cursor.textContent='|';
+  body.appendChild(cursor);
+
+  let i=0;
+  const text=ANNIV_LETTER;
+  function typeChar(){
+    if(i>=text.length){
+      cursor.remove();
+      document.getElementById('anniv-footer').classList.add('show');
+      const btn=document.getElementById('anniv-next-btn');
+      if(btn){btn.style.opacity='1';btn.style.pointerEvents='all';}
+      spawnH(10);spawnP(8);
+      return;
+    }
+    const ch=text[i++];
+    if(ch==='\n'){
+      body.insertBefore(document.createElement('br'),cursor);
+      if(text[i]==='\n'){body.insertBefore(document.createElement('br'),cursor);i++;}
+    } else {
+      body.insertBefore(document.createTextNode(ch),cursor);
+    }
+    body.parentElement.scrollTop=body.parentElement.scrollHeight;
+    const delay=ch==='.'||ch==='!'||ch==='?'?200:ch===','||ch===';'?100:ch===' '?38:42;
+    setTimeout(typeChar,delay);
+  }
+  setTimeout(typeChar,900);
+}
+
+/* ═══════════════════════════════════
+   PAGE 5: FINAL — CONFETTI BURST
+═══════════════════════════════════ */
+function initFinal(){
+  // Confetti inside card
+  const wrap=document.getElementById('final-wrap');
+  const confPieces=['🎉','🎊','🎈','✨','💖','🌸','🎀','⭐','💫','🎁'];
+  for(let i=0;i<22;i++){
+    const c=document.createElement('div');c.className='conf';
+    c.textContent=confPieces[~~(Math.random()*confPieces.length)];
+    c.style.cssText=`left:${Math.random()*90}%;font-size:${.7+Math.random()*.7}rem;--d:${2.5+Math.random()*2.5}s;--dl:${Math.random()*1.5}s;--sp:${(Math.random()-.5)*540}deg;--dx:${(Math.random()-.5)*100}px;`;
+    wrap.appendChild(c);
+  }
+  // Big burst
+  setTimeout(()=>{
+    burst(window.innerWidth/2,window.innerHeight*0.3,60);
+    spawnH(15);spawnP(12);
+    for(let i=0;i<4;i++) setTimeout(()=>{spawnH(6);spawnP(5);burst(Math.random()*pW,Math.random()*pH*.5,20)},i*600+300);
+  },400);
+}
+
+/* ═══════════════════════════════════
+   BACKGROUND MUSIC
+═══════════════════════════════════ */
+let bgMusicMuted = false;
+function startBgMusic() {
+  const audio = document.getElementById('bg-music');
+  if (!audio) return;
+  // Only attempt if src is set (not empty/placeholder)
+  if (!audio.src || audio.src === window.location.href) return;
+  audio.volume = 0;
+  audio.play().then(() => {
+    // Fade in over 3 seconds
+    let vol = 0;
+    const fi = setInterval(() => {
+      vol = Math.min(vol + 0.02, 0.55);
+      audio.volume = vol;
+      if (vol >= 0.55) clearInterval(fi);
+    }, 100);
+    document.getElementById('music-bar').classList.add('vis');
+    document.getElementById('mbar-lbl').textContent = 'Background Music';
+  }).catch(() => {
+    // Autoplay blocked — show bar anyway, user click will unlock
+    document.getElementById('music-bar').classList.add('vis');
+  });
+}
+function toggleBgMusic() {
+  const audio = document.getElementById('bg-music');
+  const btn   = document.getElementById('mbar-mute');
+  if (!audio) return;
+  bgMusicMuted = !bgMusicMuted;
+  if (bgMusicMuted) {
+    audio.pause();
+    btn.textContent = '🔇';
+  } else {
+    audio.play().catch(() => {});
+    btn.textContent = '🔊';
+  }
+}
+
+/* ═══════════════════════════════════
+   INIT
+═══════════════════════════════════ */
+document.addEventListener('DOMContentLoaded',()=>{
+  buildNavDots();
+  setTimeout(()=>document.getElementById('curtain').classList.add('open'),200);
+  setTimeout(()=>{spawnH(6);spawnP(7)},1600);
+  setInterval(()=>spawnH(4),6000);
+  setInterval(()=>spawnP(5),7500);
+  pageInited[0]=true;
+  // Start background music (unlocked on first interaction if blocked)
+  setTimeout(startBgMusic, 1000);
+  // Unlock on first tap if autoplay blocked
+  document.addEventListener('click', () => { if (!bgMusicMuted) { const a=document.getElementById('bg-music'); if(a&&a.paused&&a.src&&a.src!==window.location.href){a.volume=0.55;a.play().catch(()=>{}); document.getElementById('music-bar').classList.add('vis');} } }, {once:true});
+});
+</script>
+</body>
+</html>
